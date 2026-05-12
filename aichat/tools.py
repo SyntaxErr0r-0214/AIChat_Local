@@ -78,10 +78,18 @@ UNSAFE_TOOLS = {"create_file", "edit_file", "create_dir", "open_in_app", "run_co
 
 
 def _resolve_path(path):
-    """将相对路径解析为基于项目目录的绝对路径"""
+    """
+    解析路径：
+      - 绝对路径 → 直接使用
+      - ~/xxx → 展开为用户主目录
+      - 相对路径 → 基于用户主目录
+    """
+    # 展开 ~ 为用户主目录
+    path = os.path.expanduser(path)
     if os.path.isabs(path):
         return path
-    return os.path.join(PROJECT_DIR, path)
+    # 相对路径基于用户主目录
+    return os.path.join(os.path.expanduser("~"), path)
 
 
 # ════════════════════════════════════════
@@ -162,7 +170,7 @@ def tool_run_command(command):
     try:
         result = subprocess.run(
             command, shell=True, capture_output=True,
-            text=True, timeout=30, cwd=PROJECT_DIR,
+            text=True, timeout=30, cwd=os.path.expanduser("~"),
         )
         output = result.stdout
         if result.stderr:
