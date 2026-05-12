@@ -407,17 +407,25 @@ def main():
                 # 每轮自动保存
                 save_session(session_id, messages, system_prompt, session_title)
 
-                # ─── 自动记忆提取（仅在普通模式下执行） ───
+                # ─── 自动记忆提取（后台执行，不阻塞输入） ───
                 # 技能模式下跳过记忆提取，因为技能对话通常不包含个人信息
                 if not active_skill and clean_resp:
-                    new_mems = extract_memories_from_chat(inp, clean_resp)
-                    if new_mems:
-                        console.print()
-                        for mem in new_mems:
-                            console.print(f"  [dim #aa55ff]🧠 已记住: {mem}[/]")
-                        # 更新系统提示中的记忆上下文
-                        memory_ctx = build_memory_context()
-                        messages[0] = {"role": "system", "content": system_prompt + memory_ctx}
+                    import threading
+                    def _bg_extract(user_msg, ai_msg, msgs, sys_prompt):
+                        try:
+                            new_mems = extract_memories_from_chat(user_msg, ai_msg)
+                            if new_mems:
+                                for mem in new_mems:
+                                    console.print(f"\n  [dim #aa55ff]🧠 已记住: {mem}[/]")
+                                memory_ctx = build_memory_context()
+                                msgs[0] = {"role": "system", "content": sys_prompt + memory_ctx}
+                        except Exception:
+                            pass  # 静默失败
+                    threading.Thread(
+                        target=_bg_extract,
+                        args=(inp, clean_resp, messages, system_prompt),
+                        daemon=True,
+                    ).start()
 
             # 历史长度控制（防止超出上下文窗口）
             # 清理工具交互中间记录，只保留 user/assistant/system
