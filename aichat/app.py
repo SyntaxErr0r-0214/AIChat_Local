@@ -156,6 +156,7 @@ def main():
     # ════════════════════════════════════
     # 主交互循环
     # ════════════════════════════════════
+    _memory_thread = None  # 后台记忆提取线程引用
     while True:
         try:
             # 获取用户输入（提示符根据技能模式变化）
@@ -179,6 +180,10 @@ def main():
                 arg = parts[1] if len(parts) > 1 else ""
 
                 if cmd in ("/exit", "/bye"):
+                    # 等待后台记忆提取完成（最多 5 秒）
+                    if _memory_thread and _memory_thread.is_alive():
+                        console.print("[dim]等待记忆保存完成...[/]")
+                        _memory_thread.join(timeout=5)
                     # 退出前保存有内容的对话
                     if any(m["role"] == "user" for m in messages):
                         save_session(session_id, messages, system_prompt, session_title)
@@ -421,11 +426,12 @@ def main():
                                 msgs[0] = {"role": "system", "content": sys_prompt + memory_ctx}
                         except Exception:
                             pass  # 静默失败
-                    threading.Thread(
+                    _memory_thread = threading.Thread(
                         target=_bg_extract,
                         args=(inp, clean_resp, messages, system_prompt),
                         daemon=True,
-                    ).start()
+                    )
+                    _memory_thread.start()
 
             # 历史长度控制（防止超出上下文窗口）
             # 清理工具交互中间记录，只保留 user/assistant/system
