@@ -40,20 +40,20 @@ def check_connection(console=None):
         list: 模型名称列表，连接失败返回空列表
     """
     if console:
-        console.print("[dim]正在检查服务器连接...[/]", end=" ")
+        console.print("[dim]Checking connection...[/]", end=" ")
     try:
         r = requests.get(f"{config.API_BASE}/v1/models", timeout=5)
         if r.status_code == 200:
             loaded = [m.get("id", "?") for m in r.json().get("data", [])]
             if console:
-                console.print(f"[bold #00ff88]✓ 已连接[/]  [dim]{', '.join(loaded)}[/]")
+                console.print(f"[bold #00ff88]Connected[/]  [dim]{', '.join(loaded)}[/]")
             return loaded
         else:
             if console:
                 console.print(f"[yellow]⚠ HTTP {r.status_code}[/]")
     except Exception:
         if console:
-            console.print("[bold red]✗ 无法连接[/]")
+            console.print("[bold red]Disconnected[/]")
     if console:
         console.print()
     return []
@@ -119,7 +119,7 @@ def _stream_once(messages, console):
                         if display:
                             live.update(Markdown(display + " ▌", code_theme="monokai"))
                         else:
-                            live.update(Text("⚙ 正在调用工具...", style="dim #ff9900"))
+                            live.update(Text("Calling tools...", style="dim #ff9900"))
                 except (json.JSONDecodeError, KeyError, IndexError):
                     continue
             # 最终渲染
@@ -129,17 +129,17 @@ def _stream_once(messages, console):
 
     except requests.ConnectionError:
         console.print(Panel(
-            f"[bold red]无法连接到 {config.API_BASE}[/]\n请检查 LM Studio 远程服务是否已启动",
-            title="[bold red]❌ 连接失败[/]",
+            f"[bold red]Cannot connect to {config.API_BASE}[/]\nCheck if LM Studio server is running",
+            title="[bold red]Connection Failed[/]",
             border_style="red",
             box=box.ROUNDED,
         ))
         return ""
     except requests.Timeout:
-        console.print("[bold red]⏰ 请求超时，请稍后重试。[/]")
+        console.print("[bold red]Request timed out. Try again later.[/]")
         return ""
     except Exception as e:
-        console.print(f"[bold red]❌ {type(e).__name__}: {e}[/]")
+        console.print(f"[bold red]{type(e).__name__}: {e}[/]")
         return ""
 
     return full
@@ -188,7 +188,7 @@ def stream_chat(messages, console, tools_enabled=True):
         # 逐个执行工具
         tool_results = []
         for tc in tool_calls:
-            console.print(f"\n  [bold #ff9900]🔧 {tc['name']}[/]", end="")
+            console.print(f"\n  [bold #ff9900]  {tc['name']}[/]", end="")
             success, result = execute_tool(tc["name"], tc["arguments"], console)
             status = "[#00ff88]✓[/]" if success else "[red]✗[/]"
             console.print(f"  {status}")
@@ -210,8 +210,8 @@ def stream_chat(messages, console, tools_enabled=True):
     # ─── 显示统计信息 ───
     elapsed = time.time() - t0
     st = Text()
-    st.append(f"  ⏱ {elapsed:.1f}s", style="dim #888888")
-    st.append(f"  │  📝 {len(final_text)} 字符", style="dim #888888")
+    st.append(f"  {elapsed:.1f}s", style="dim #888888")
+    st.append(f"  |  {len(final_text)} chars", style="dim #888888")
     console.print(st)
 
     return final_text

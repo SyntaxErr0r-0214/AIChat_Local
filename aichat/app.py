@@ -121,8 +121,8 @@ def main():
     show_banner()
     console.print("[dim #444444]" + "─" * 60 + "[/]")
     console.print(
-        "[dim]输入消息开始对话  •  [bold #00ff88]/help[/] 查看命令  •  "
-        "[bold #00ff88]/sessions[/] 历史会话  •  [bold #00ff88]/bye[/] 退出[/]"
+        "[dim]Start typing to chat  |  [bold #00ff88]/help[/] commands  |  "
+        "[bold #00ff88]/sessions[/] history  |  [bold #00ff88]/bye[/] exit[/]"
     )
     console.print()
 
@@ -136,7 +136,7 @@ def main():
     # 启动时显示记忆状态
     mem_count = len(get_all_memories())
     if mem_count > 0:
-        console.print(f"[dim #aa55ff]🧠 已加载 {mem_count} 条记忆[/]")
+        console.print(f"[dim #aa55ff]{mem_count} memories loaded[/]")
     session_id = gen_session_id()
     session_title = None
     cached_sessions = None  # 缓存 /sessions 结果供 /load 使用
@@ -182,19 +182,19 @@ def main():
                 if cmd in ("/exit", "/bye"):
                     # 检查后台记忆提取
                     if _memory_thread and _memory_thread.is_alive():
-                        console.print("[yellow]⏳ 记忆正在保存中... (Ctrl+C 强制退出)[/]")
+                        console.print("[yellow]Saving memories... (Ctrl+C to force quit)[/]")
                         try:
                             while _memory_thread.is_alive():
                                 _memory_thread.join(timeout=0.5)
-                            console.print("[dim #aa55ff]🧠 记忆保存完成[/]")
+                            console.print("[dim #aa55ff]Memories saved[/]")
                         except KeyboardInterrupt:
-                            console.print("[dim]已强制退出，最后一条记忆可能未保存[/]")
+                            console.print("[dim]Force quit. Last memory may not be saved.[/]")
                     # 退出前保存有内容的对话
                     if any(m["role"] == "user" for m in messages):
                         save_session(session_id, messages, system_prompt, session_title)
-                        console.print("[dim]当前对话已保存。[/]")
+                        console.print("[dim]Session saved.[/]")
                     console.print(Panel(
-                        "[bold #00ddff]感谢使用 AIChat，再见！👋[/]",
+                        "[bold #00ddff]Goodbye.[/]",
                         border_style="#0088cc", box=box.ROUNDED,
                     ))
                     break
@@ -203,7 +203,7 @@ def main():
                     # 保存旧对话 → 开始新会话
                     if any(m["role"] == "user" for m in messages):
                         save_session(session_id, messages, system_prompt, session_title)
-                        console.print("[dim]旧对话已保存。[/]")
+                        console.print("[dim]Previous session saved.[/]")
                     # 重建系统提示（含最新记忆）
                     memory_ctx = build_memory_context()
                     full_system = system_prompt + memory_ctx
@@ -212,14 +212,14 @@ def main():
                     session_title = None
                     console.clear()
                     show_banner()
-                    console.print("[bold #00ff88]✓ 已开始新会话[/]\n")
+                    console.print("[bold #00ff88]New session started[/]\n")
 
                 elif cmd == "/sessions":
                     cached_sessions = show_sessions()
 
                 elif cmd == "/load":
                     if not arg:
-                        console.print("[dim]用法: /load <序号> (先用 /sessions 查看列表)[/]")
+                        console.print("[dim]Usage: /load <n> (use /sessions to list)[/]")
                         continue
                     try:
                         idx = int(arg) - 1
@@ -234,16 +234,16 @@ def main():
                             sid = s["session_id"]
                             messages, system_prompt, session_title = load_session(sid)
                             session_id = sid
-                            console.print(f"[bold #00ff88]✓ 已加载会话:[/] {session_title}")
+                            console.print(f"[bold #00ff88]Session loaded:[/] {session_title}")
                             show_history(messages)
                         else:
-                            console.print(f"[red]序号超出范围 (1-{len(cached_sessions)})[/]")
+                            console.print(f"[red]Index out of range (1-{len(cached_sessions)})[/]")
                     except ValueError:
-                        console.print("[red]请输入有效的数字序号[/]")
+                        console.print("[red]Enter a valid number[/]")
 
                 elif cmd == "/delete":
                     if not arg:
-                        console.print("[dim]用法: /delete <序号>[/]")
+                        console.print("[dim]Usage: /delete <n> (use /sessions to list)[/]")
                         continue
                     try:
                         idx = int(arg) - 1
@@ -252,14 +252,14 @@ def main():
                         if 0 <= idx < len(cached_sessions):
                             s = cached_sessions[idx]
                             if delete_session(s["session_id"]):
-                                console.print(f"[bold #00ff88]✓ 已删除:[/] {s.get('title', '?')}")
+                                console.print(f"[bold #00ff88]Deleted:[/] {s.get('title', '?')}")
                                 cached_sessions = list_sessions()
                             else:
-                                console.print("[red]删除失败[/]")
+                                console.print("[red]Delete failed[/]")
                         else:
-                            console.print("[red]序号超出范围[/]")
+                            console.print("[red]Index out of range[/]")
                     except ValueError:
-                        console.print("[red]请输入有效的数字序号[/]")
+                        console.print("[red]Enter a valid number[/]")
 
                 elif cmd == "/help":
                     show_help()
@@ -275,31 +275,31 @@ def main():
                 elif cmd == "/remember":
                     if arg:
                         entry = add_memory(arg, source="manual")
-                        console.print(f"[bold #00ff88]✓ 已记住:[/] {arg}")
+                        console.print(f"[bold #00ff88]Remembered:[/] {arg}")
                     else:
-                        console.print("[dim]用法: /remember <要记住的内容>[/]")
+                        console.print("[dim]Usage: /remember <content>[/]")
 
                 elif cmd == "/forget":
                     if arg.strip().lower() == "all":
                         clear_all_memories()
                         # 更新系统提示（移除记忆部分）
                         messages[0] = {"role": "system", "content": system_prompt}
-                        console.print("[bold #00ff88]✓ 所有记忆已清除[/]")
+                        console.print("[bold #00ff88]All memories cleared[/]")
                     elif arg:
                         try:
                             idx = int(arg) - 1
                             ok, content = delete_memory_by_index(idx)
                             if ok:
-                                console.print(f"[bold #00ff88]✓ 已遗忘:[/] {content}")
+                                console.print(f"[bold #00ff88]Forgotten:[/] {content}")
                                 # 更新系统提示中的记忆
                                 memory_ctx = build_memory_context()
                                 messages[0] = {"role": "system", "content": system_prompt + memory_ctx}
                             else:
-                                console.print("[red]序号超出范围[/]")
+                                console.print("[red]Index out of range[/]")
                         except ValueError:
-                            console.print("[red]请输入有效的序号或 'all'[/]")
+                            console.print("[red]Enter a valid number or 'all'[/]")
                     else:
-                        console.print("[dim]用法: /forget <序号> 或 /forget all[/]")
+                        console.print("[dim]Usage: /forget <n> or /forget all[/]")
 
                 # ─── 技能相关命令 ───
                 elif cmd == "/skills":
@@ -316,9 +316,9 @@ def main():
                             # 恢复普通系统提示 + 记忆
                             memory_ctx = build_memory_context()
                             messages[0] = {"role": "system", "content": system_prompt + memory_ctx}
-                            console.print(f"[bold #00ff88]✓ 已关闭技能: {old_name}，回到普通模式[/]")
+                            console.print(f"[bold #00ff88]Skill deactivated: {old_name}[/]")
                         else:
-                            console.print("[dim]当前已是普通模式[/]")
+                            console.print("[dim]Already in normal mode[/]")
                     elif arg:
                         try:
                             idx = int(arg) - 1
@@ -341,53 +341,53 @@ def main():
                                 console.print(Panel(
                                     f"[bold #ffaa00]{skill['name']}[/]\n\n"
                                     f"[dim]{skill['description']}[/]",
-                                    title="[bold #ff8800]🎯 技能已激活[/]",
+                                    title="[bold #ff8800]Skill Activated[/]",
                                     border_style="#ff8800",
                                     box=box.ROUNDED,
                                     padding=(1, 2),
                                 ))
                             else:
-                                console.print(f"[red]序号超出范围 (1-{len(cached_skills)})[/]")
+                                console.print(f"[red]Index out of range (1-{len(cached_skills)})[/]")
                         except ValueError:
-                            console.print("[red]请输入有效的序号，或使用 /skill off 关闭[/]")
+                            console.print("[red]Enter a valid index, or use /skill off[/]")
                     else:
                         if active_skill:
-                            console.print(f"[dim]当前技能: [bold #ffaa00]{active_skill['name']}[/]")
+                            console.print(f"[dim]Active skill: [bold #ffaa00]{active_skill['name']}[/]")
                         else:
-                            console.print("[dim]当前未激活技能。使用 /skills 查看可用技能[/]")
+                            console.print("[dim]No active skill. Use /skills to browse.[/]")
 
                 elif cmd == "/system":
                     if arg:
                         system_prompt = arg
                         memory_ctx = build_memory_context()
                         messages[0] = {"role": "system", "content": arg + memory_ctx}
-                        # 如果在技能模式下修改 system，自动退出技能模式
+                        # Exit skill mode when system prompt is manually changed
                         if active_skill:
                             active_skill = None
-                            console.print("[dim]已自动退出技能模式[/]")
-                        console.print("[bold #00ff88]✓ 系统提示已更新[/]")
+                            console.print("[dim]Skill mode deactivated[/]")
+                        console.print("[bold #00ff88]System prompt updated[/]")
                     else:
-                        console.print(f"[dim]当前: {system_prompt}[/]")
+                        console.print(f"[dim]Current: {system_prompt}[/]")
                 elif cmd == "/connect":
                     if arg:
                         # 确保有 http:// 前缀
                         new_url = arg if arg.startswith("http") else f"http://{arg}"
                         from .config import set_api_base
                         set_api_base(new_url)
-                        console.print(f"[bold #00ff88]✓ 已切换到: {new_url}[/]")
+                        console.print(f"[bold #00ff88]Switched to: {new_url}[/]")
                         # 自动测试连接
-                        console.print("[dim]正在测试连接...[/]", end=" ")
+                        console.print("[dim]Testing connection...[/]", end=" ")
                         models = check_connection()
                         if models:
-                            console.print(f"[bold #00ff88]✓ 已连接[/]  {', '.join(models)}")
+                            console.print(f"[bold #00ff88]Connected[/]  {', '.join(models)}")
                         else:
-                            console.print("[bold red]✗ 无法连接，请检查地址[/]")
+                            console.print("[bold red]Connection failed. Check address.[/]")
                     else:
                         from .config import API_BASE
-                        console.print(f"[dim]当前地址: {API_BASE}[/]")
-                        console.print("[dim]用法: /connect http://IP:端口[/]")
+                        console.print(f"[dim]Current: {API_BASE}[/]")
+                        console.print("[dim]Usage: /connect http://IP:port[/]")
                 else:
-                    console.print(f"[dim]未知命令: {cmd}，输入 /help 查看帮助[/]")
+                    console.print(f"[dim]Unknown command: {cmd}. Type /help for help.[/]")
                 continue
 
             # ─── 发送用户消息 ───
@@ -399,7 +399,7 @@ def main():
             console.print()
             ts = datetime.now().strftime("%H:%M:%S")
             h = Text()
-            h.append("  🤖 AI  ", style="bold white on #0066aa")
+            h.append("  AI  ", style="bold white on #0066aa")
             h.append(f"  {ts}", style="dim #666666")
             console.print(h)
             console.print()
@@ -426,7 +426,7 @@ def main():
                             new_mems = extract_memories_from_chat(user_msg, ai_msg)
                             if new_mems:
                                 for mem in new_mems:
-                                    console.print(f"\n  [dim #aa55ff]🧠 已记住: {mem}[/]")
+                                    console.print(f"\n  [dim #aa55ff]Remembered: {mem}[/]")
                                 memory_ctx = build_memory_context()
                                 msgs[0] = {"role": "system", "content": sys_prompt + memory_ctx}
                         except Exception:
@@ -456,10 +456,10 @@ def main():
             console.print()
 
         except KeyboardInterrupt:
-            console.print("\n[dim]Ctrl+C 中断，输入 /bye 退出[/]")
+            console.print("\n[dim]Interrupted. Type /bye to exit.[/]")
         except EOFError:
             # Ctrl+D 退出
             if any(m["role"] == "user" for m in messages):
                 save_session(session_id, messages, system_prompt, session_title)
-            console.print("\n[bold #00ddff]再见！👋[/]")
+            console.print("\n[bold #00ddff]Goodbye.[/]")
             break

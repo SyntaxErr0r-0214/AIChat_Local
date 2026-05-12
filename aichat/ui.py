@@ -1,12 +1,13 @@
 """
-终端 UI 模块 - 负责所有视觉渲染
+Terminal UI Module - All visual rendering
 
-包含:
-  - ASCII Art 启动横幅
-  - 帮助菜单表格
-  - 历史会话列表
-  - 当前对话摘要
-  - 模型状态面板
+Contains:
+  - ASCII Art startup banner with gradient
+  - Help menu table
+  - Session history list
+  - Conversation summary
+  - Model status panel
+  - Memory & skills display
 """
 
 import requests
@@ -23,12 +24,12 @@ from .history import list_sessions
 from .memory import get_all_memories
 from .skills import list_skills
 
-# 全局 Console 实例，供所有模块共享
+# Global Console instance, shared across all modules
 console = Console()
 
 
 def show_banner():
-    """显示启动横幅 - ASCII Art + 蓝色渐变"""
+    """Display startup banner - gradient ASCII Art"""
     lines = [
         "     █████╗ ██╗     ██████╗██╗  ██╗ █████╗ ████████╗",
         "    ██╔══██╗██║    ██╔════╝██║  ██║██╔══██╗╚══██╔══╝",
@@ -37,53 +38,52 @@ def show_banner():
         "    ██║  ██║██║    ╚██████╗██║  ██║██║  ██║   ██║   ",
         "    ╚═╝  ╚═╝╚═╝     ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   ",
     ]
-    colors = ["#00d4ff", "#00c8ff", "#00bcff", "#00b0ff", "#00a4ff", "#0098ff"]
+    # Gradient: cyan → blue → purple
+    gradient = ["#00e5ff", "#00bbff", "#0099ff", "#3377ff", "#6655ff", "#8844ee"]
+
     text = Text()
     for i, line in enumerate(lines):
-        text.append(line + "\n", style=colors[i % len(colors)])
+        text.append(line + "\n", style=gradient[i])
     console.print()
     console.print(Align.center(text))
 
-    # 副标题信息栏
-    sub = Text()
-    sub.append("  ⚡ 本地大模型终端助手  ", style="bold white on #0055aa")
-    sub.append("  ", style="")
-    sub.append(f" 🔗 {config.API_BASE} ", style="dim white on #333333")
-    sub.append("  ", style="")
-    sub.append(f" 🧠 {config.MODEL_NAME} ", style="dim white on #333333")
-    console.print(Align.center(sub))
+    # Author credit
+    credit = Text()
+    credit.append("  by Julian Zhang  ", style="dim italic #888888")
+    console.print(Align.center(credit))
     console.print()
 
 
 def show_help():
-    """显示帮助菜单 - 所有可用斜杠命令"""
+    """Display help menu - all available slash commands"""
     t = Table(
-        title="💡 命令列表",
+        title="Commands",
         box=box.DOUBLE_EDGE,
         border_style="#00aaff",
         title_style="bold #00ddff",
         header_style="bold #ff9900",
         show_lines=True,
     )
-    t.add_column("命令", style="bold #00ff88", min_width=16)
-    t.add_column("说明", style="white", min_width=36)
+    t.add_column("Command", style="bold #00ff88", min_width=16)
+    t.add_column("Description", style="white", min_width=36)
     for cmd, desc in [
-        ("/help",          "显示此帮助菜单"),
-        ("/clear",         "清除当前对话，开始新会话"),
-        ("/sessions",      "查看所有历史会话列表"),
-        ("/load <序号>",    "加载指定历史会话继续对话"),
-        ("/delete <序号>",  "删除指定历史会话"),
-        ("/history",       "查看当前对话记录摘要"),
-        ("/memory",        "查看 AI 记住的关于你的信息"),
-        ("/remember <内容>","手动添加一条记忆"),
-        ("/forget <序号>",  "删除指定记忆条目"),
-        ("/forget all",    "清除所有记忆"),
-        ("/skills",        "查看所有可用技能"),
-        ("/skill <序号>",   "激活指定技能（切换到技能模式）"),
-        ("/skill off",     "关闭技能，回到普通对话模式"),
-        ("/model",         "显示模型与连接信息"),
-        ("/system <词>",    "设置系统提示词"),
-        ("/bye",           "退出程序"),
+        ("/help",           "Show this help menu"),
+        ("/clear",          "Clear conversation, start new session"),
+        ("/sessions",       "List all saved sessions"),
+        ("/load <n>",       "Load a saved session by index"),
+        ("/delete <n>",     "Delete a saved session by index"),
+        ("/history",        "Show current conversation summary"),
+        ("/memory",         "View stored memories about you"),
+        ("/remember <...>", "Manually add a memory"),
+        ("/forget <n>",     "Delete a memory by index"),
+        ("/forget all",     "Clear all memories"),
+        ("/skills",         "List available skills"),
+        ("/skill <n>",      "Activate a skill by index"),
+        ("/skill off",      "Deactivate skill, return to normal mode"),
+        ("/connect <url>",  "Change API server address"),
+        ("/model",          "Show model & connection info"),
+        ("/system <...>",   "Set system prompt"),
+        ("/bye",            "Exit"),
     ]:
         t.add_row(cmd, desc)
     console.print()
@@ -93,28 +93,28 @@ def show_help():
 
 def show_sessions():
     """
-    显示历史会话列表表格。
+    Display session history table.
 
-    返回:
-        list[dict]: 会话元数据列表（供 /load、/delete 使用）
+    Returns:
+        list[dict]: Session metadata list (for /load, /delete)
     """
     sessions = list_sessions()
     if not sessions:
-        console.print("[dim]暂无历史会话。[/]")
+        console.print("[dim]No saved sessions.[/]")
         return []
 
     t = Table(
-        title=f"📂 历史会话 ({len(sessions)} 个)",
+        title=f"Sessions ({len(sessions)})",
         box=box.ROUNDED,
         border_style="#0088cc",
         title_style="bold #00ddff",
         header_style="bold #ff9900",
         show_lines=True,
     )
-    t.add_column("序号", style="bold #00ff88", width=4, justify="center")
-    t.add_column("标题", style="white", max_width=40)
-    t.add_column("消息数", style="dim", width=6, justify="center")
-    t.add_column("最后更新", style="dim #888888", width=16)
+    t.add_column("#", style="bold #00ff88", width=4, justify="center")
+    t.add_column("Title", style="white", max_width=40)
+    t.add_column("Msgs", style="dim", width=6, justify="center")
+    t.add_column("Last Updated", style="dim #888888", width=16)
 
     for i, s in enumerate(sessions, 1):
         updated = s.get("updated_at", "?")[:16].replace("T", " ")
@@ -123,13 +123,13 @@ def show_sessions():
 
     console.print()
     console.print(t)
-    console.print("[dim]使用 /load <序号> 加载会话  •  /delete <序号> 删除会话[/]")
+    console.print("[dim]/load <n> to load  |  /delete <n> to remove[/]")
     console.print()
     return sessions
 
 
 def show_status():
-    """显示模型与连接状态面板"""
+    """Display model & connection status panel"""
     ok, models = False, []
     try:
         r = requests.get(f"{config.API_BASE}/v1/models", timeout=5)
@@ -139,13 +139,14 @@ def show_status():
     except Exception:
         pass
 
+    status = "[bold #00ff88]Connected[/]" if ok else "[bold red]Disconnected[/]"
     console.print(Panel(
-        f"[bold #00ddff]服务地址:[/] {config.API_BASE}\n"
-        f"[bold #00ddff]模型名称:[/] {config.MODEL_NAME}\n"
-        f"[bold #00ddff]上下文长度:[/] 32768 tokens\n"
-        f"[bold #00ddff]已加载模型:[/] {', '.join(models) or '无法获取'}\n"
-        f"[bold #00ddff]连接状态:[/] {'🟢 已连接' if ok else '🔴 无法连接'}",
-        title="[bold #ff9900]🧠 模型信息[/]",
+        f"[bold #00ddff]Server:[/] {config.API_BASE}\n"
+        f"[bold #00ddff]Model:[/] {config.MODEL_NAME}\n"
+        f"[bold #00ddff]Context:[/] 32768 tokens\n"
+        f"[bold #00ddff]Loaded:[/] {', '.join(models) or 'N/A'}\n"
+        f"[bold #00ddff]Status:[/] {status}",
+        title="[bold #ff9900]Model Info[/]",
         border_style="#0088cc",
         box=box.ROUNDED,
         padding=(1, 2),
@@ -153,21 +154,21 @@ def show_status():
 
 
 def show_history(messages):
-    """显示当前对话的消息摘要表格"""
+    """Display current conversation message summary"""
     pairs = [(m["role"], m["content"]) for m in messages if m["role"] != "system"]
     if not pairs:
-        console.print("[dim]暂无对话记录。[/]")
+        console.print("[dim]No messages yet.[/]")
         return
 
     t = Table(
-        title=f"📜 当前对话 ({len(pairs)} 条)",
+        title=f"Conversation ({len(pairs)} messages)",
         box=box.SIMPLE_HEAVY,
         border_style="#555555",
         title_style="bold #00ddff",
     )
     t.add_column("#", style="dim", width=4)
-    t.add_column("角色", width=6)
-    t.add_column("内容摘要", max_width=60)
+    t.add_column("Role", width=6)
+    t.add_column("Content", max_width=60)
 
     for i, (role, content) in enumerate(pairs, 1):
         label = "[#00ff88]You[/]" if role == "user" else "[#ff9900]AI[/]"
@@ -177,72 +178,72 @@ def show_history(messages):
 
 
 def show_memories():
-    """显示所有持久化记忆"""
+    """Display all persistent memories"""
     memories = get_all_memories()
     if not memories:
-        console.print("[dim]🧠 暂无记忆。AI 会在对话中自动记住关于你的重要信息。[/]")
+        console.print("[dim]No memories stored. AI will remember important info from conversations.[/]")
         return
 
     t = Table(
-        title=f"🧠 AI 记忆 ({len(memories)} 条)",
+        title=f"Memory ({len(memories)} items)",
         box=box.ROUNDED,
         border_style="#aa55ff",
         title_style="bold #cc77ff",
         header_style="bold #ff9900",
         show_lines=True,
     )
-    t.add_column("序号", style="bold #00ff88", width=4, justify="center")
-    t.add_column("记忆内容", style="white", max_width=50)
-    t.add_column("来源", style="dim", width=6, justify="center")
-    t.add_column("时间", style="dim #888888", width=16)
+    t.add_column("#", style="bold #00ff88", width=4, justify="center")
+    t.add_column("Content", style="white", max_width=50)
+    t.add_column("Source", style="dim", width=6, justify="center")
+    t.add_column("Time", style="dim #888888", width=16)
 
     for i, m in enumerate(memories, 1):
-        source_label = "自动" if m.get("source") == "auto" else "手动"
+        source_label = "auto" if m.get("source") == "auto" else "manual"
         created = m.get("created_at", "?")[:16].replace("T", " ")
         t.add_row(str(i), m["content"], source_label, created)
 
     console.print()
     console.print(t)
-    console.print("[dim]使用 /remember <内容> 手动添加  •  /forget <序号> 删除  •  /forget all 全部清除[/]")
+    console.print("[dim]/remember <...> to add  |  /forget <n> to remove  |  /forget all to clear[/]")
     console.print()
 
 
 def show_skills(active_skill_id=None):
     """
-    显示所有可用技能列表。
+    Display all available skills.
 
-    参数:
-        active_skill_id: 当前激活的技能 ID（用于标记）
+    Args:
+        active_skill_id: Currently active skill ID (for marking)
 
-    返回:
-        list[dict]: 技能列表
+    Returns:
+        list[dict]: Skill list
     """
     skills = list_skills()
     if not skills:
-        console.print("[dim]skills/ 目录下没有技能文件。[/]")
-        console.print("[dim]创建 .md 文件即可添加技能，格式参见已有示例。[/]")
+        console.print("[dim]No skill files in skills/ directory.[/]")
+        console.print("[dim]Add .md files to create skills. See existing examples for format.[/]")
         return []
 
     t = Table(
-        title="🎯 可用技能",
+        title="Skills",
         box=box.ROUNDED,
         border_style="#ff8800",
         title_style="bold #ffaa00",
         header_style="bold #ff9900",
         show_lines=True,
     )
-    t.add_column("序号", style="bold #00ff88", width=4, justify="center")
-    t.add_column("名称", style="white", min_width=12)
-    t.add_column("说明", style="dim", max_width=40)
-    t.add_column("状态", width=8, justify="center")
+    t.add_column("#", style="bold #00ff88", width=4, justify="center")
+    t.add_column("Name", style="white", min_width=12)
+    t.add_column("Description", style="dim", max_width=40)
+    t.add_column("Status", width=8, justify="center")
 
     for i, s in enumerate(skills, 1):
         is_active = (s["id"] == active_skill_id) if active_skill_id else False
-        status = "[bold #00ff88]● 激活[/]" if is_active else "[dim]○[/]"
+        status = "[bold #00ff88]active[/]" if is_active else "[dim]-[/]"
         t.add_row(str(i), s["name"], s["description"], status)
 
     console.print()
     console.print(t)
-    console.print("[dim]使用 /skill <序号> 激活  •  /skill off 关闭技能回到普通模式[/]")
+    console.print("[dim]/skill <n> to activate  |  /skill off to deactivate[/]")
     console.print()
     return skills

@@ -102,14 +102,14 @@ def tool_create_file(path, content):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         f.write(content)
-    return f"✅ 文件已创建: {path} ({len(content)} 字符)"
+    return f"File created: {path} ({len(content)} chars)"
 
 
 def tool_read_file(path):
     """读取文件内容"""
     path = _resolve_path(path)
     if not os.path.exists(path):
-        return f"❌ 文件不存在: {path}"
+        return f"File not found: {path}"
     with open(path, "r", encoding="utf-8") as f:
         content = f.read()
     # 限制返回长度，防止上下文溢出
@@ -122,22 +122,22 @@ def tool_edit_file(path, old_text, new_text):
     """编辑文件：查找 old_text 并替换为 new_text"""
     path = _resolve_path(path)
     if not os.path.exists(path):
-        return f"❌ 文件不存在: {path}"
+        return f"File not found: {path}"
     with open(path, "r", encoding="utf-8") as f:
         content = f.read()
     if old_text not in content:
-        return f"❌ 未找到要替换的内容"
+        return f"Target text not found"
     new_content = content.replace(old_text, new_text, 1)
     with open(path, "w", encoding="utf-8") as f:
         f.write(new_content)
-    return f"✅ 文件已编辑: {path}"
+    return f"File edited: {path}"
 
 
 def tool_list_dir(path):
     """列出目录内容"""
     path = _resolve_path(path)
     if not os.path.isdir(path):
-        return f"❌ 目录不存在: {path}"
+        return f"Directory not found: {path}"
     items = []
     for name in sorted(os.listdir(path)):
         full = os.path.join(path, name)
@@ -153,20 +153,20 @@ def tool_create_dir(path):
     """创建目录"""
     path = _resolve_path(path)
     os.makedirs(path, exist_ok=True)
-    return f"✅ 目录已创建: {path}"
+    return f"Directory created: {path}"
 
 
 def tool_open_in_app(path, app=None):
     """用指定应用或系统默认应用打开文件"""
     path = _resolve_path(path)
     if not os.path.exists(path):
-        return f"❌ 文件不存在: {path}"
+        return f"File not found: {path}"
     if app:
         subprocess.Popen(["open", "-a", app, path])
-        return f"✅ 已用 {app} 打开: {path}"
+        return f"Opened with {app}: {path}"
     else:
         subprocess.Popen(["open", path])
-        return f"✅ 已用默认应用打开: {path}"
+        return f"Opened: {path}"
 
 
 def tool_run_command(command):
@@ -180,12 +180,12 @@ def tool_run_command(command):
         if result.stderr:
             output += "\n[stderr] " + result.stderr
         if len(output) > 4000:
-            output = output[:4000] + "\n... (输出过长，已截断)"
-        return output or "(无输出)"
+            output = output[:4000] + "\n... (output truncated)"
+        return output or "(no output)"
     except subprocess.TimeoutExpired:
-        return "❌ 命令执行超时 (30s)"
+        return "Command timed out (30s)"
     except Exception as e:
-        return f"❌ 执行失败: {e}"
+        return f"Execution failed: {e}"
 
 
 # 工具注册表
@@ -272,11 +272,11 @@ def execute_tool(name, arguments, console):
         tuple: (成功与否, 结果文本)
     """
     if name not in TOOL_REGISTRY:
-        return False, f"❌ 未知工具: {name}"
+        return False, f"Unknown tool: {name}"
 
     # 不安全操作需要用户确认
     if name in UNSAFE_TOOLS:
-        console.print(f"\n[bold #ff9900]⚠ AI 请求执行操作:[/]")
+        console.print(f"\n[bold #ff9900]AI requests operation:[/]")
         console.print(f"  [bold]{name}[/]", end="")
         # 显示关键参数
         if name == "create_file":
@@ -294,19 +294,19 @@ def execute_tool(name, arguments, console):
 
         # 请求确认
         try:
-            confirm = console.input("[bold #00ddff]允许执行? (y/n): [/]").strip().lower()
+            confirm = console.input("[bold #00ddff]Allow? (y/n): [/]").strip().lower()
         except (KeyboardInterrupt, EOFError):
-            return False, "❌ 用户取消"
+            return False, "Cancelled by user"
 
-        if confirm not in ("y", "yes", "是"):
-            return False, "❌ 用户拒绝执行"
+        if confirm not in ("y", "yes"):
+            return False, "Rejected by user"
 
     # 执行工具
     try:
         result = TOOL_REGISTRY[name](arguments)
         return True, result
     except Exception as e:
-        return False, f"❌ 工具执行出错: {type(e).__name__}: {e}"
+        return False, f"Tool error: {type(e).__name__}: {e}"
 
 
 def strip_tool_calls(text):
