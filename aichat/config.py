@@ -14,7 +14,7 @@ PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # ══ LM Studio API 配置 ══
 # 优先级: 环境变量 > 默认值
 # 运行时可通过 /connect 命令修改
-_DEFAULT_API_BASE = "http://198.18.0.1:1234"
+_DEFAULT_API_BASE = "http://localhost:1234"
 API_BASE = os.environ.get("AICHAT_API_BASE", _DEFAULT_API_BASE)
 MODEL_NAME = "google/gemma-4-e4b"            # 模型标识符（与 LM Studio 中一致）
 API_ENDPOINT = f"{API_BASE}/v1/chat/completions"  # OpenAI 兼容聊天接口
