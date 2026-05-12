@@ -1,0 +1,22 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# 用户数据（不上传隐私数据）
+chat_history/
+first_loves/
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# 克隆的参考仓库（太大且有独立 .git）
+skills/first-love-skill/
