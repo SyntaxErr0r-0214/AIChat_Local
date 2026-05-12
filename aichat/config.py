@@ -65,8 +65,8 @@ DEFAULT_SYSTEM_PROMPT = """你是一个有帮助的AI助手。请用中文回答
 5. **create_dir** - 创建目录（含中间目录）
    参数: path(目录路径)
 
-6. **open_in_app** - 用系统默认应用打开文件
-   参数: path(文件路径)
+6. **open_in_app** - 用指定应用或默认应用打开文件
+   参数: path(文件路径), app(可选，应用名称，如 "Visual Studio Code", "Finder", "Safari")
 
 7. **run_command** - 执行 shell 命令
    参数: command(命令字符串)

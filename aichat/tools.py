@@ -156,13 +156,17 @@ def tool_create_dir(path):
     return f"✅ 目录已创建: {path}"
 
 
-def tool_open_in_app(path):
-    """用 macOS 默认应用打开文件"""
+def tool_open_in_app(path, app=None):
+    """用指定应用或系统默认应用打开文件"""
     path = _resolve_path(path)
     if not os.path.exists(path):
         return f"❌ 文件不存在: {path}"
-    subprocess.Popen(["open", path])
-    return f"✅ 已打开: {path}"
+    if app:
+        subprocess.Popen(["open", "-a", app, path])
+        return f"✅ 已用 {app} 打开: {path}"
+    else:
+        subprocess.Popen(["open", path])
+        return f"✅ 已用默认应用打开: {path}"
 
 
 def tool_run_command(command):
@@ -191,7 +195,7 @@ TOOL_REGISTRY = {
     "edit_file": lambda args: tool_edit_file(args["path"], args["old_text"], args["new_text"]),
     "list_dir": lambda args: tool_list_dir(args["path"]),
     "create_dir": lambda args: tool_create_dir(args["path"]),
-    "open_in_app": lambda args: tool_open_in_app(args["path"]),
+    "open_in_app": lambda args: tool_open_in_app(args["path"], args.get("app")),
     "run_command": lambda args: tool_run_command(args["command"]),
 }
 
