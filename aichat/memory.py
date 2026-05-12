@@ -27,10 +27,10 @@ import uuid
 import requests
 from datetime import datetime
 
-from .config import HISTORY_DIR, API_BASE, MODEL_NAME
+from .config import MEMORY_DIR, API_BASE, MODEL_NAME
 
 # 记忆文件路径
-MEMORY_FILE = os.path.join(HISTORY_DIR, "memory.json")
+MEMORY_FILE = os.path.join(MEMORY_DIR, "memory.json")
 
 # ── 用于提取记忆的提示词 ──
 # 这个提示词会发送给模型，要求它从对话中提取值得长期记住的信息
@@ -77,7 +77,7 @@ def _load_memory_file():
 
 def _save_memory_file(data):
     """保存记忆到磁盘"""
-    os.makedirs(HISTORY_DIR, exist_ok=True)
+    os.makedirs(MEMORY_DIR, exist_ok=True)
     with open(MEMORY_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 

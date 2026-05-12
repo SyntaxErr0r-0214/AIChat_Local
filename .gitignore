@@ -9,6 +9,7 @@ build/
 
 # 用户数据（不上传隐私数据）
 chat_history/
+user_data/
 first_loves/
 
 # macOS

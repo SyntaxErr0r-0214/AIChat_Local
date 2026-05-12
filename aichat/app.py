@@ -34,7 +34,7 @@ from .ui import (
 )
 
 import os
-from .config import PROJECT_DIR
+from .config import FIRST_LOVES_DIR
 
 
 def _load_existing_first_love():
@@ -47,20 +47,19 @@ def _load_existing_first_love():
     返回:
         str: 组合后的角色扮演提示词，如果没有已有角色则返回 None
     """
-    first_loves_dir = os.path.join(PROJECT_DIR, "first_loves")
-    if not os.path.isdir(first_loves_dir):
+    if not os.path.isdir(FIRST_LOVES_DIR):
         return None
 
     # 扫描子目录
-    slugs = [d for d in os.listdir(first_loves_dir)
-             if os.path.isdir(os.path.join(first_loves_dir, d)) and not d.startswith(".")]
+    slugs = [d for d in os.listdir(FIRST_LOVES_DIR)
+             if os.path.isdir(os.path.join(FIRST_LOVES_DIR, d)) and not d.startswith(".")]
 
     if not slugs:
         return None
 
     # 选取第一个（后续可扩展为让用户选择）
     slug = slugs[0]
-    slug_dir = os.path.join(first_loves_dir, slug)
+    slug_dir = os.path.join(FIRST_LOVES_DIR, slug)
 
     # 读取文件
     persona_text = ""
