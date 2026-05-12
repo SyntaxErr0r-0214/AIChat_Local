@@ -89,6 +89,18 @@ def _stream_once(messages, console):
                     tok = json.loads(d)["choices"][0].get("delta", {}).get("content", "")
                     if tok:
                         full += tok
+
+                        # ─── 重复检测：防止模型陷入循环输出 ───
+                        if len(full) > 200:
+                            # 取最后 80 个字符，检查是否在前文中重复出现
+                            tail = full[-80:]
+                            prefix = full[:-80]
+                            if tail in prefix:
+                                # 发现重复，截断到首次出现的位置
+                                first_pos = full.index(tail)
+                                full = full[:first_pos + len(tail)]
+                                break
+
                         # 渲染时隐藏 tool_call 标签，只显示文本部分
                         display = strip_tool_calls(full)
                         if display:
@@ -156,8 +168,9 @@ def stream_chat(messages, console, tools_enabled=True):
             break
 
         # ─── 有工具调用，执行 Agent 循环 ───
-        # 先把模型的完整响应（含 tool_call）加入消息历史
-        messages.append({"role": "assistant", "content": raw_response})
+        # 只保留工具调用部分作为 assistant 消息（去掉文本，防止下一轮重复）
+        tool_call_only = "\n".join(tc["raw"] for tc in tool_calls)
+        messages.append({"role": "assistant", "content": tool_call_only})
 
         # 逐个执行工具
         tool_results = []
@@ -166,13 +179,13 @@ def stream_chat(messages, console, tools_enabled=True):
             success, result = execute_tool(tc["name"], tc["arguments"], console)
             status = "[#00ff88]✓[/]" if success else "[red]✗[/]"
             console.print(f"  {status}")
-            tool_results.append(f"工具 {tc['name']} 执行结果:\n{result}")
+            tool_results.append(f"[{tc['name']}] {result}")
 
-        # 把工具结果作为系统/用户消息反馈给模型
-        combined_results = "\n\n---\n\n".join(tool_results)
+        # 把工具结果反馈给模型
+        combined_results = "\n".join(tool_results)
         messages.append({
             "role": "user",
-            "content": f"<tool_result>\n{combined_results}\n</tool_result>\n\n请根据工具执行结果继续回复。如果所有操作已完成，直接告诉用户结果即可，不需要再调用工具。"
+            "content": f"<tool_result>\n{combined_results}\n</tool_result>\n\n根据以上工具执行结果，直接告诉用户结果。不要重复之前说过的话。"
         })
 
         console.print()  # 换行，准备下一轮输出

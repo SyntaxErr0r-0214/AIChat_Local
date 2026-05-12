@@ -33,6 +33,86 @@ from .ui import (
     show_sessions, show_status, show_history, show_memories, show_skills,
 )
 
+import os
+from .config import PROJECT_DIR
+
+
+def _load_existing_first_love():
+    """
+    检查 first_loves/ 目录下是否有已创建的初恋角色。
+
+    如果找到，读取 persona.md 和 memory.md，组合成一个直接的
+    角色扮演系统提示词（跳过创建流程）。
+
+    返回:
+        str: 组合后的角色扮演提示词，如果没有已有角色则返回 None
+    """
+    first_loves_dir = os.path.join(PROJECT_DIR, "first_loves")
+    if not os.path.isdir(first_loves_dir):
+        return None
+
+    # 扫描子目录
+    slugs = [d for d in os.listdir(first_loves_dir)
+             if os.path.isdir(os.path.join(first_loves_dir, d)) and not d.startswith(".")]
+
+    if not slugs:
+        return None
+
+    # 选取第一个（后续可扩展为让用户选择）
+    slug = slugs[0]
+    slug_dir = os.path.join(first_loves_dir, slug)
+
+    # 读取文件
+    persona_text = ""
+    memory_text = ""
+
+    persona_path = os.path.join(slug_dir, "persona.md")
+    if os.path.exists(persona_path):
+        with open(persona_path, "r", encoding="utf-8") as f:
+            persona_text = f.read()
+
+    memory_path = os.path.join(slug_dir, "memory.md")
+    if os.path.exists(memory_path):
+        with open(memory_path, "r", encoding="utf-8") as f:
+            memory_text = f.read()
+
+    if not persona_text and not memory_text:
+        return None
+
+    # 从 persona 中提取名字
+    name = slug
+    for line in persona_text.split("\n"):
+        if "代号" in line and "：" in line:
+            name = line.split("：")[-1].strip().strip("*")
+            break
+
+    # 组合成角色扮演提示词
+    prompt = f"""你现在是"{name}"，一个真实存在过的人。以下是关于你的记忆和人格档案。
+
+## 核心规则
+
+1. 你是 {name}，不是 AI 助手。绝对不要说"我是 AI"、"作为语言模型"之类的话
+2. 用 ta 当时的方式说话，不是用户想听的方式说话
+3. 保持真实：不神化、不洗白、不把自己写成完美角色
+4. 回复要有 ta 的节奏和说话风格
+5. 可以有细小波动，但不要漂移成另一个人
+6. 保留青涩和留白——那些没说出口的、犹豫的、欲言又止的，才是真实的
+7. 如果用户问到记忆中没有的事，用 ta 的风格自然带过，不要编造不存在的记忆
+8. 如果用户说"ta 不会这样说"，调整自己的表达方式
+
+## 你的记忆档案
+
+{memory_text}
+
+## 你的人格档案
+
+{persona_text}
+
+---
+现在开始，你就是 {name}。用 ta 的方式跟用户说话。"""
+
+    return prompt
+
 
 def main():
     """主程序入口: 初始化界面 → 进入交互循环"""
@@ -238,9 +318,17 @@ def main():
                             if 0 <= idx < len(cached_skills):
                                 skill = cached_skills[idx]
                                 active_skill = skill
-                                # 技能模式: 用技能提示词替换系统提示，保留记忆
                                 memory_ctx = build_memory_context()
-                                messages[0] = {"role": "system", "content": skill["prompt"] + memory_ctx}
+
+                                # ─── 初恋 Skill 特殊处理：检测已有角色 ───
+                                skill_prompt = skill["prompt"]
+                                if "初恋" in skill.get("name", ""):
+                                    persona_info = _load_existing_first_love()
+                                    if persona_info:
+                                        # 有已创建的角色，注入角色数据，跳过创建流程
+                                        skill_prompt = persona_info
+
+                                messages[0] = {"role": "system", "content": skill_prompt + memory_ctx}
                                 console.print(Panel(
                                     f"[bold #ffaa00]{skill['name']}[/]\n\n"
                                     f"[dim]{skill['description']}[/]",
