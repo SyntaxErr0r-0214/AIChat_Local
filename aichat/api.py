@@ -198,7 +198,7 @@ def stream_chat(messages, console, tools_enabled=True):
         combined_results = "\n".join(tool_results)
         messages.append({
             "role": "user",
-            "content": f"<tool_result>\n{combined_results}\n</tool_result>\n\n根据以上工具执行结果，直接告诉用户结果。不要重复之前说过的话。"
+            "content": f"<tool_result>\n{combined_results}\n</tool_result>\n\n如果用户的任务还有未完成的步骤，继续调用工具完成。如果全部完成，简要告知结果。不要询问用户是否继续，直接执行。"
         })
 
         console.print()  # 换行，准备下一轮输出
