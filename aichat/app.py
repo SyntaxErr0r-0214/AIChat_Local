@@ -180,10 +180,15 @@ def main():
                 arg = parts[1] if len(parts) > 1 else ""
 
                 if cmd in ("/exit", "/bye"):
-                    # 等待后台记忆提取完成（最多 5 秒）
+                    # 检查后台记忆提取
                     if _memory_thread and _memory_thread.is_alive():
-                        console.print("[dim]等待记忆保存完成...[/]")
-                        _memory_thread.join(timeout=5)
+                        console.print("[yellow]⏳ 记忆正在保存中... (Ctrl+C 强制退出)[/]")
+                        try:
+                            while _memory_thread.is_alive():
+                                _memory_thread.join(timeout=0.5)
+                            console.print("[dim #aa55ff]🧠 记忆保存完成[/]")
+                        except KeyboardInterrupt:
+                            console.print("[dim]已强制退出，最后一条记忆可能未保存[/]")
                     # 退出前保存有内容的对话
                     if any(m["role"] == "user" for m in messages):
                         save_session(session_id, messages, system_prompt, session_title)
