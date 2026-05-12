@@ -17,6 +17,7 @@ from rich.text import Text
 from rich.markdown import Markdown
 from rich.live import Live
 from rich.panel import Panel
+from rich.spinner import Spinner
 from rich import box
 
 from . import config
@@ -76,22 +77,22 @@ def _stream_once(messages, console):
     full = ""
 
     try:
-        resp = requests.post(
-            config.API_ENDPOINT,
-            json=payload,
-            headers={"Content-Type": "application/json"},
-            stream=True,
-            timeout=config.REQUEST_TIMEOUT,
-        )
-        resp.raise_for_status()
-        resp.encoding = "utf-8"
-
         with Live(
-            Text("▌", style="bold #00ddff"),
+            Spinner("dots", style="bold #00ddff"),
             console=console,
-            refresh_per_second=8,
+            refresh_per_second=12.5,
             vertical_overflow="visible",
         ) as live:
+            resp = requests.post(
+                config.API_ENDPOINT,
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                stream=True,
+                timeout=config.REQUEST_TIMEOUT,
+            )
+            resp.raise_for_status()
+            resp.encoding = "utf-8"
+
             for line in resp.iter_lines(decode_unicode=True):
                 if not line or not line.startswith("data: "):
                     continue
@@ -119,13 +120,15 @@ def _stream_once(messages, console):
                         if display:
                             live.update(Markdown(display + " ▌", code_theme="monokai"))
                         else:
-                            live.update(Text("Calling tools...", style="dim #ff9900"))
+                            live.update(Spinner("dots", style="dim #ff9900"))
                 except (json.JSONDecodeError, KeyError, IndexError):
                     continue
             # 最终渲染
             display = strip_tool_calls(full)
             if display:
                 live.update(Markdown(display, code_theme="monokai"))
+            else:
+                live.update(Text(""))
 
     except requests.ConnectionError:
         console.print(Panel(

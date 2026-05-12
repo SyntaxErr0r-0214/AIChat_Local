@@ -18,6 +18,8 @@
   <img src="https://img.shields.io/badge/LM_Studio-Compatible-green?logo=data:image/svg+xml;base64," alt="LM Studio">
   <img src="https://img.shields.io/badge/License-MIT-yellow" alt="License">
   <img src="https://img.shields.io/badge/Platform-macOS-lightgrey?logo=apple" alt="macOS">
+  <a href="assets/wechat.jpg"><img src="https://img.shields.io/badge/WeChat-Contact-07C160?logo=wechat&logoColor=white" alt="WeChat"></a>
+  <a href="assets/whatsapp.jpg"><img src="https://img.shields.io/badge/WhatsApp-Contact-25D366?logo=whatsapp&logoColor=white" alt="WhatsApp"></a>
 </p>
 
 ---
@@ -33,6 +35,7 @@ AIChat 是一个功能丰富的**本地大模型命令行客户端**，通过 LM
 | 特性 | 说明 |
 |------|------|
 | 🌊 **流式输出** | 逐 token 实时渲染，Markdown 格式美化，代码高亮 |
+| ⏳ **动态等待** | 请求生成与工具调用过程中，呈现流畅的动态等待动画 |
 | 🧠 **持久化记忆** | 自动提取并记住你的个人信息，跨会话保留 |
 | 💾 **会话管理** | 自动保存对话，支持加载/删除历史会话 |
 | 🎯 **技能系统** | 可切换的 AI 角色/模式，放入 `.md` 文件即可添加 |
@@ -118,22 +121,21 @@ AIChat/
 
 ### 基本对话
 
-启动后直接输入消息即可开始对话，AI 会以 Markdown 格式流式输出回复：
+启动后直接输入消息即可开始对话，AI 会以 Markdown 格式流式输出回复，并带有加载动画和代码高亮。
 
-```
-❯ 什么是量子计算？
-
-  🤖 AI  09:30:00
-
-  ## 量子计算简介
-  量子计算是一种利用量子力学原理进行信息处理的计算范式...
-
-  ⏱ 3.2s  │  📝 456 字符
-```
+<p align="center">
+  <img src="assets/chat_example.svg" alt="Chat Example" width="90%">
+</p>
 
 ### 命令列表
 
 所有命令以 `/` 开头：
+
+<p align="center">
+  <img src="assets/help_menu.svg" alt="Help Menu" width="80%">
+</p>
+
+常用基础命令如下：
 
 | 命令 | 说明 |
 |------|------|
@@ -173,6 +175,12 @@ AIChat/
 |------|------|
 | `/model` | 查看模型与连接状态 |
 | `/system <提示词>` | 修改系统提示词 |
+
+使用 `/model` 可以随时查看当前连接的后端服务及上下文信息：
+
+<p align="center">
+  <img src="assets/status_panel.svg" alt="Status Panel" width="80%">
+</p>
 
 ---
 
