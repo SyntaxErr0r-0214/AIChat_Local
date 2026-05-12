@@ -18,7 +18,7 @@ from rich.table import Table
 from rich.align import Align
 from rich import box
 
-from .config import API_BASE, MODEL_NAME
+from . import config
 from .history import list_sessions
 from .memory import get_all_memories
 from .skills import list_skills
@@ -48,9 +48,9 @@ def show_banner():
     sub = Text()
     sub.append("  ⚡ 本地大模型终端助手  ", style="bold white on #0055aa")
     sub.append("  ", style="")
-    sub.append(f" 🔗 {API_BASE} ", style="dim white on #333333")
+    sub.append(f" 🔗 {config.API_BASE} ", style="dim white on #333333")
     sub.append("  ", style="")
-    sub.append(f" 🧠 {MODEL_NAME} ", style="dim white on #333333")
+    sub.append(f" 🧠 {config.MODEL_NAME} ", style="dim white on #333333")
     console.print(Align.center(sub))
     console.print()
 
@@ -132,7 +132,7 @@ def show_status():
     """显示模型与连接状态面板"""
     ok, models = False, []
     try:
-        r = requests.get(f"{API_BASE}/v1/models", timeout=5)
+        r = requests.get(f"{config.API_BASE}/v1/models", timeout=5)
         if r.status_code == 200:
             ok = True
             models = [m.get("id", "?") for m in r.json().get("data", [])]
@@ -140,8 +140,8 @@ def show_status():
         pass
 
     console.print(Panel(
-        f"[bold #00ddff]服务地址:[/] {API_BASE}\n"
-        f"[bold #00ddff]模型名称:[/] {MODEL_NAME}\n"
+        f"[bold #00ddff]服务地址:[/] {config.API_BASE}\n"
+        f"[bold #00ddff]模型名称:[/] {config.MODEL_NAME}\n"
         f"[bold #00ddff]上下文长度:[/] 32768 tokens\n"
         f"[bold #00ddff]已加载模型:[/] {', '.join(models) or '无法获取'}\n"
         f"[bold #00ddff]连接状态:[/] {'🟢 已连接' if ok else '🔴 无法连接'}",

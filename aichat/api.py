@@ -19,31 +19,44 @@ from rich.live import Live
 from rich.panel import Panel
 from rich import box
 
-from .config import API_BASE, API_ENDPOINT, MODEL_NAME, MAX_TOKENS, TEMPERATURE, REQUEST_TIMEOUT
+from . import config
 from .tools import parse_tool_calls, execute_tool, strip_tool_calls
 
 # Agent 循环最大轮次（防止无限循环）
 MAX_TOOL_ROUNDS = 8
 
 
-def check_connection(console):
+def check_connection(console=None):
     """
     检查 LM Studio 服务器连接状态。
 
     向 /v1/models 端点发送 GET 请求，
-    成功则显示已加载的模型列表。
+    成功则返回已加载的模型列表。
+
+    参数:
+        console: Rich Console 实例，传入时打印状态信息
+
+    返回:
+        list: 模型名称列表，连接失败返回空列表
     """
-    console.print("[dim]正在检查服务器连接...[/]", end=" ")
+    if console:
+        console.print("[dim]正在检查服务器连接...[/]", end=" ")
     try:
-        r = requests.get(f"{API_BASE}/v1/models", timeout=5)
+        r = requests.get(f"{config.API_BASE}/v1/models", timeout=5)
         if r.status_code == 200:
             loaded = [m.get("id", "?") for m in r.json().get("data", [])]
-            console.print(f"[bold #00ff88]✓ 已连接[/]  [dim]{', '.join(loaded)}[/]")
+            if console:
+                console.print(f"[bold #00ff88]✓ 已连接[/]  [dim]{', '.join(loaded)}[/]")
+            return loaded
         else:
-            console.print(f"[yellow]⚠ HTTP {r.status_code}[/]")
+            if console:
+                console.print(f"[yellow]⚠ HTTP {r.status_code}[/]")
     except Exception:
-        console.print("[bold red]✗ 无法连接[/]")
-    console.print()
+        if console:
+            console.print("[bold red]✗ 无法连接[/]")
+    if console:
+        console.print()
+    return []
 
 
 def _stream_once(messages, console):
@@ -54,21 +67,21 @@ def _stream_once(messages, console):
         str: 模型完整响应文本，失败返回空字符串
     """
     payload = {
-        "model": MODEL_NAME,
+        "model": config.MODEL_NAME,
         "messages": messages,
         "stream": True,
-        "temperature": TEMPERATURE,
-        "max_tokens": MAX_TOKENS,
+        "temperature": config.TEMPERATURE,
+        "max_tokens": config.MAX_TOKENS,
     }
     full = ""
 
     try:
         resp = requests.post(
-            API_ENDPOINT,
+            config.API_ENDPOINT,
             json=payload,
             headers={"Content-Type": "application/json"},
             stream=True,
-            timeout=REQUEST_TIMEOUT,
+            timeout=config.REQUEST_TIMEOUT,
         )
         resp.raise_for_status()
         resp.encoding = "utf-8"
@@ -116,7 +129,7 @@ def _stream_once(messages, console):
 
     except requests.ConnectionError:
         console.print(Panel(
-            f"[bold red]无法连接到 {API_BASE}[/]\n请检查 LM Studio 远程服务是否已启动",
+            f"[bold red]无法连接到 {config.API_BASE}[/]\n请检查 LM Studio 远程服务是否已启动",
             title="[bold red]❌ 连接失败[/]",
             border_style="red",
             box=box.ROUNDED,

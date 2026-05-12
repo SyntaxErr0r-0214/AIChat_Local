@@ -358,6 +358,24 @@ def main():
                         console.print("[bold #00ff88]✓ 系统提示已更新[/]")
                     else:
                         console.print(f"[dim]当前: {system_prompt}[/]")
+                elif cmd == "/connect":
+                    if arg:
+                        # 确保有 http:// 前缀
+                        new_url = arg if arg.startswith("http") else f"http://{arg}"
+                        from .config import set_api_base
+                        set_api_base(new_url)
+                        console.print(f"[bold #00ff88]✓ 已切换到: {new_url}[/]")
+                        # 自动测试连接
+                        console.print("[dim]正在测试连接...[/]", end=" ")
+                        models = check_connection()
+                        if models:
+                            console.print(f"[bold #00ff88]✓ 已连接[/]  {', '.join(models)}")
+                        else:
+                            console.print("[bold red]✗ 无法连接，请检查地址[/]")
+                    else:
+                        from .config import API_BASE
+                        console.print(f"[dim]当前地址: {API_BASE}[/]")
+                        console.print("[dim]用法: /connect http://IP:端口[/]")
                 else:
                     console.print(f"[dim]未知命令: {cmd}，输入 /help 查看帮助[/]")
                 continue

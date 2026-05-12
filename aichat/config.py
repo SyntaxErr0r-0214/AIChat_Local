@@ -12,9 +12,19 @@ import os
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # ══ LM Studio API 配置 ══
-API_BASE = "http://172.20.10.3:1234"        # LM Studio 远程服务地址
+# 优先级: 环境变量 > 默认值
+# 运行时可通过 /connect 命令修改
+_DEFAULT_API_BASE = "http://198.18.0.1:1234"
+API_BASE = os.environ.get("AICHAT_API_BASE", _DEFAULT_API_BASE)
 MODEL_NAME = "google/gemma-4-e4b"            # 模型标识符（与 LM Studio 中一致）
 API_ENDPOINT = f"{API_BASE}/v1/chat/completions"  # OpenAI 兼容聊天接口
+
+
+def set_api_base(new_base):
+    """运行时动态修改 API 地址"""
+    global API_BASE, API_ENDPOINT
+    API_BASE = new_base.rstrip("/")
+    API_ENDPOINT = f"{API_BASE}/v1/chat/completions"
 
 # ══ 生成参数 ══
 MAX_HISTORY = 80          # 最大保留对话轮数（匹配 32768 token 上下文窗口）

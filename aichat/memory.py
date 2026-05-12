@@ -27,7 +27,8 @@ import uuid
 import requests
 from datetime import datetime
 
-from .config import MEMORY_DIR, API_BASE, MODEL_NAME
+from . import config
+from .config import MEMORY_DIR
 
 # 记忆文件路径
 MEMORY_FILE = os.path.join(MEMORY_DIR, "memory.json")
@@ -196,9 +197,9 @@ def extract_memories_from_chat(user_msg, ai_msg):
 
     try:
         resp = requests.post(
-            f"{API_BASE}/v1/chat/completions",
+            f"{config.API_BASE}/v1/chat/completions",
             json={
-                "model": MODEL_NAME,
+                "model": config.MODEL_NAME,
                 "messages": [{"role": "user", "content": prompt}],
                 "temperature": 0.1,    # 低温度，确保输出稳定
                 "max_tokens": 256,     # 记忆提取不需要长输出
