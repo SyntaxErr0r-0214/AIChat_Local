@@ -180,7 +180,7 @@ def show_status():
     console.print(Panel(
         f"[bold #00ddff]Server:[/] {config.API_BASE}\n"
         f"[bold #00ddff]Model:[/] {config.MODEL_NAME}\n"
-        f"[bold #00ddff]Context:[/] 32768 tokens\n"
+        f"[bold #00ddff]Context:[/] 65536 tokens\n"
         f"[bold #00ddff]Loaded:[/] {', '.join(models) or 'N/A'}\n"
         f"[bold #00ddff]Status:[/] {status}",
         title="[bold #ff9900]Model Info[/]",

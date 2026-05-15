@@ -27,10 +27,10 @@ def set_api_base(new_base):
     API_ENDPOINT = f"{API_BASE}/v1/chat/completions"
 
 # ══ 生成参数 ══
-MAX_HISTORY = 80          # 最大保留对话轮数（匹配 32768 token 上下文窗口）
+MAX_HISTORY = 120          # 最大保留对话轮数（匹配 32768 token 上下文窗口）
 MAX_TOKENS = 8192         # 单次生成的最大 token 数
 TEMPERATURE = 0.7         # 生成多样性（0=确定性输出, 1=高随机性）
-REQUEST_TIMEOUT = 300     # API 请求超时时间（秒）
+REQUEST_TIMEOUT = 450     # API 请求超时时间（秒）
 
 # ══ 存储路径 ══
 HISTORY_DIR = os.path.join(PROJECT_DIR, "chat_history")    # 历史会话存储目录（仅聊天记录）
